@@ -14,12 +14,13 @@ import {
   Syringe,
 } from 'lucide-react';
 import type { Sensor, SensorWithBreach } from '@/types';
-import { formatShortHash } from '@/hooks/useBLELogger';
+import { formatShortHash, type BLELogEntry } from '@/hooks/useBLELogger';
 
 type QRScanModalProps = {
   result: { sensor: Sensor; scannedAt: string } | null;
   sensor: SensorWithBreach | null;
   chainHash: string;
+  log: BLELogEntry[];
   sealed: boolean;
   onClose: () => void;
   onSelectSensor: (sensorId: string) => void;
@@ -155,6 +156,7 @@ export function QRScanModal({
   result,
   sensor,
   chainHash,
+  log,
   sealed,
   onClose,
   onSelectSensor,
@@ -193,7 +195,8 @@ export function QRScanModal({
   const alertLevel = 'alertLevel' in displaySensor ? displaySensor.alertLevel : 0;
   const activeBreach =
     'activeBreach' in displaySensor ? displaySensor.activeBreach : null;
-  const trajectoryPass = inRange && alertLevel === 0 && !activeBreach;
+  const cumulativeMinutesAboveLimit = log.filter((entry) => entry.temperature > 8).length * 2;
+  const trajectoryPass = inRange && alertLevel === 0 && !activeBreach && cumulativeMinutesAboveLimit <= 5;
   // A handover can only be sealed when the dose has a safe temperature history.
   // This makes the action an actual use gate rather than a status-only warning.
   const canFinalize = trajectoryPass && pharmacistSigned && fieldSigned && !sealing;
@@ -301,6 +304,11 @@ export function QRScanModal({
                 {displaySensor.min_temp}° – {displaySensor.max_temp}°
               </p>
             </div>
+          </div>
+
+          <div className={`mb-3 rounded-xl border p-3 text-xs ${cumulativeMinutesAboveLimit > 5 ? 'border-red-700/40 bg-red-950/25 text-red-200' : 'border-slate-700/40 bg-slate-800/40 text-slate-300'}`}>
+            <p className="font-medium">Cumulative exposure above 8°C: {cumulativeMinutesAboveLimit} simulated min</p>
+            <p className="mt-0.5 text-slate-500">Maximum allowed before pharmacist hold: 5 simulated min.</p>
           </div>
 
           <div

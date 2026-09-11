@@ -24,6 +24,7 @@ import { EscalationLegend } from '@/components/EscalationLegend';
 import { SimulationControls } from '@/components/SimulationControls';
 import { QRScanModal } from '@/components/QRScanModal';
 import { BLELoggerPanel } from '@/components/BLELoggerPanel';
+import { ChainOfCustodyPanel } from '@/components/ChainOfCustodyPanel';
 import { formatShortHash, useBLELogger } from '@/hooks/useBLELogger';
 
 function App() {
@@ -252,6 +253,12 @@ function App() {
 
           {/* Right: BLE Logger + Alert Panel */}
           <div className="space-y-6 lg:col-span-1">
+            <ChainOfCustodyPanel
+              logger={bleLogger.state}
+              log={bleLogger.log}
+              onStartLogger={bleLogger.start}
+              onScanAtDestination={simulateQRScan}
+            />
             <BLELoggerPanel
               state={bleLogger.state}
               log={bleLogger.log}
@@ -300,6 +307,7 @@ function App() {
             : null
         }
         chainHash={bleLogger.state.chainHash}
+        log={bleLogger.log}
         sealed={bleLogger.state.sealed}
         onClose={clearQRScanResult}
         onSelectSensor={(id) => setSelectedSensorId(id)}
