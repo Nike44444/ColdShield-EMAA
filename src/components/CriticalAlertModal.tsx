@@ -10,6 +10,7 @@ type CriticalAlertModalProps = {
 
 export function CriticalAlertModal({ alerts, sensors, onAcknowledge }: CriticalAlertModalProps) {
   const [dismissedId, setDismissedId] = useState<string | null>(null);
+  const [suppressedUntil, setSuppressedUntil] = useState(0);
   const critical = alerts.find((alert) => alert.alert_level === 3 && !alert.acknowledged) ?? null;
   const sensor = critical ? sensors.find((item) => item.id === critical.sensor_id) : null;
 
@@ -17,7 +18,7 @@ export function CriticalAlertModal({ alerts, sensors, onAcknowledge }: CriticalA
     if (critical && critical.id !== dismissedId) setDismissedId(null);
   }, [critical, dismissedId]);
 
-  if (!critical || dismissedId === critical.id) return null;
+  if (!critical || dismissedId === critical.id || Date.now() < suppressedUntil) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/80 p-4 backdrop-blur-sm sm:items-center">
@@ -48,7 +49,7 @@ export function CriticalAlertModal({ alerts, sensors, onAcknowledge }: CriticalA
           </div>
           <p className="mt-4 flex items-center gap-2 text-xs text-red-300"><ShieldAlert className="h-4 w-4" /> Do not release this batch until review is complete.</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <button onClick={() => setDismissedId(critical.id)} className="rounded-xl border border-slate-700 bg-slate-900 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-800"><X className="mr-1 inline h-4 w-4" /> Review later</button>
+            <button onClick={() => { setDismissedId(critical.id); setSuppressedUntil(Date.now() + 60_000); }} className="rounded-xl border border-slate-700 bg-slate-900 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-800"><X className="mr-1 inline h-4 w-4" /> Snooze 1 min</button>
             <button onClick={() => onAcknowledge(critical.id, 'pharmacist')} className="rounded-xl bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-500">Acknowledge hold</button>
           </div>
         </div>

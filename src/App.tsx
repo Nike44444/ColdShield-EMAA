@@ -28,6 +28,7 @@ import { ChainOfCustodyPanel } from '@/components/ChainOfCustodyPanel';
 import { CriticalAlertModal } from '@/components/CriticalAlertModal';
 import { LastMileTracker } from '@/components/LastMileTracker';
 import { VaccineProfiles } from '@/components/VaccineProfiles';
+import { FacilityNetwork } from '@/components/FacilityNetwork';
 import { formatShortHash, useBLELogger } from '@/hooks/useBLELogger';
 
 function App() {
@@ -212,6 +213,9 @@ function App() {
         </div>
         <div className="mb-6">
           <VaccineProfiles />
+        </div>
+        <div className="mb-6">
+          <FacilityNetwork />
         </div>
 
         {/* Main Grid */}
