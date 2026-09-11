@@ -64,12 +64,6 @@ export function ChainOfCustodyPanel({
       </div>
 
       <div className="p-4">
-      <section className="mb-4 rounded-xl border border-slate-700/50 bg-slate-950/45 p-3">
-        <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Batch safety record</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${unsafe ? 'bg-red-500/15 text-red-300' : dispatchPayload ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-800 text-slate-400'}`}>{unsafe ? 'QUARANTINE REVIEW' : dispatchPayload ? 'IN TRANSIT' : 'READY TO DISPATCH'}</span></div>
-        <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
-          <div><p className="text-slate-500">Product</p><p className="mt-0.5 font-medium text-slate-200">{vaccine.type}</p></div><div><p className="text-slate-500">Thermal exposure</p><p className={`mt-0.5 font-medium ${unsafe ? 'text-red-300' : 'text-emerald-300'}`}>{cumulativeExposure} / 5 demo min</p></div><div><p className="text-slate-500">Stability budget</p><p className="mt-0.5 font-medium text-slate-200">{vaccine.budget}</p></div><div><p className="text-slate-500">Source facility</p><p className="mt-0.5 font-medium text-slate-200">National Vaccine Store</p></div><div><p className="text-slate-500">Destination</p><p className="mt-0.5 font-medium text-slate-200">Kollam PHC</p></div><div><p className="text-slate-500">Handling flag</p><p className="mt-0.5 font-medium text-amber-200">{vaccine.warning}</p></div>
-        </div>
-      </section>
       <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-xl bg-slate-950/50 p-2.5">
           <p className="flex items-center gap-1 text-slate-500"><Thermometer className="h-3 w-3" /> Storage band</p>
