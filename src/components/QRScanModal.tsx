@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Sensor, SensorWithBreach } from '@/types';
 import { formatShortHash, type BLELogEntry } from '@/hooks/useBLELogger';
+import { ConfettiBurst } from '@/components/ConfettiBurst';
 
 type QRScanModalProps = {
   result: { sensor: Sensor; scannedAt: string } | null;
@@ -230,6 +231,7 @@ export function QRScanModal({
       />
 
       <div className="relative max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-cyan-700/50 bg-slate-900 shadow-2xl">
+        {finalized && <ConfettiBurst />}
         <div className="relative h-24 overflow-hidden bg-gradient-to-b from-slate-800 to-slate-900">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative h-16 w-16 rounded-xl border-2 border-cyan-500/60">

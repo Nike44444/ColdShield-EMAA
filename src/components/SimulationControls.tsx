@@ -1,4 +1,4 @@
-import { Flame, Power, QrCode, ChevronDown } from 'lucide-react';
+import { Flame, Power, QrCode, ChevronDown, DoorOpen, Snowflake, RadioTower } from 'lucide-react';
 import { useState } from 'react';
 import type { SensorWithBreach } from '@/types';
 
@@ -123,6 +123,12 @@ export function SimulationControls({
           <QrCode className="h-4 w-4 shrink-0" />
           <span className="flex-1 text-left">Simulate QR Code Scan</span>
         </button>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <button onClick={() => onTriggerHeatBreach()} className="rounded-xl border border-amber-700/40 bg-amber-950/25 p-2.5 text-left text-xs text-amber-200 hover:bg-amber-900/30"><DoorOpen className="mb-1.5 h-4 w-4" /><span className="block font-semibold">Door left open</span><span className="text-[10px] text-amber-300/70">+9.8°C spike</span></button>
+        <button onClick={() => onTriggerHeatBreach()} className="rounded-xl border border-red-700/40 bg-red-950/25 p-2.5 text-left text-xs text-red-200 hover:bg-red-900/30"><Flame className="mb-1.5 h-4 w-4" /><span className="block font-semibold">Cooling failure</span><span className="text-[10px] text-red-300/70">+18.5°C heat</span></button>
+        <button onClick={() => onTriggerHeatBreach()} className="rounded-xl border border-blue-700/40 bg-blue-950/25 p-2.5 text-left text-xs text-blue-200 hover:bg-blue-900/30"><Snowflake className="mb-1.5 h-4 w-4" /><span className="block font-semibold">Freeze shock</span><span className="text-[10px] text-blue-300/70">Manual review lock</span></button>
+        <button onClick={() => onToggleOffline()} className="rounded-xl border border-slate-600/50 bg-slate-800/50 p-2.5 text-left text-xs text-slate-200 hover:bg-slate-700/60"><RadioTower className="mb-1.5 h-4 w-4" /><span className="block font-semibold">Sensor fault</span><span className="text-[10px] text-slate-400">Offline buffer</span></button>
       </div>
     </div>
   );
