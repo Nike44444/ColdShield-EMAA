@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Bell, Check, Clock, AlertTriangle, User, ShieldAlert, FlaskConical } from 'lucide-react';
+import { Bell, BellOff, Check, Clock, AlertTriangle, User, ShieldAlert, FlaskConical } from 'lucide-react';
 import type { AlertLog, Sensor } from '@/types';
 import { ALERT_LEVELS } from '@/types';
+import { useAlertSounds } from '@/hooks/useAlertSounds';
 
 type AlertPanelProps = {
   alerts: AlertLog[];
@@ -17,6 +18,7 @@ const roleIcons: Record<string, typeof Bell> = {
 
 export function AlertPanel({ alerts, sensors, onAcknowledge }: AlertPanelProps) {
   const [filter, setFilter] = useState<'all' | 'unack' | 'ack'>('all');
+  const { muted, toggleMuted } = useAlertSounds(alerts);
 
   const sensorMap = new Map(sensors.map((s) => [s.id, s]));
   const filtered = alerts.filter((a) => {
@@ -45,6 +47,13 @@ export function AlertPanel({ alerts, sensors, onAcknowledge }: AlertPanelProps) 
           </span>
         </div>
         <div className="flex gap-1">
+          <button
+            onClick={toggleMuted}
+            title={muted ? 'Enable alert sounds' : 'Mute alert sounds'}
+            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${muted ? 'bg-slate-800 text-slate-500' : 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25'}`}
+          >
+            {muted ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+          </button>
           {(['all', 'unack', 'ack'] as const).map((f) => (
             <button
               key={f}
