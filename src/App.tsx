@@ -69,7 +69,7 @@ function App() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{sensors.map((sensor) => <SensorCard key={sensor.id} sensor={sensor} onClick={() => setSelectedSensorId(sensor.id)} isSelected={selectedSensorId === sensor.id} />)}</div>
               {selectedSensor && <div className="mt-4"><TemperatureChart readings={selectedSensor.recentReadings} sensor={selectedSensor} /></div>}
             </section>
-            <VaccineProfiles selectedId={activeVaccine.id} onSelect={setActiveVaccine} />
+            <VaccineProfiles selectedId={activeVaccine.id} onSelect={setActiveVaccine} locked={Boolean(dispatchPayload)} />
             <LastMileTracker />
           </div>
           <aside className="space-y-6 xl:col-span-1">
