@@ -430,14 +430,21 @@ export function useColdChain() {
     }
   }, []);
 
-  // Trigger a forced heat breach on a specific sensor (or first active sensor)
-  const triggerHeatBreach = useCallback(async (sensorId?: string) => {
+  // Trigger a named incident pattern on a specific sensor (or first active sensor).
+  const triggerHeatBreach = useCallback(async (
+    sensorId?: string,
+    scenario: 'door-open' | 'cooling-failure' | 'freeze-shock' = 'door-open'
+  ) => {
     const target = sensorId
       ? sensors.find((s) => s.id === sensorId)
       : sensors.find((s) => s.is_active);
     if (!target) return;
 
-    const breachTemp = target.max_temp + 3 + Math.random() * 2;
+    const breachTemp = scenario === 'freeze-shock'
+      ? target.min_temp - 3.5 - Math.random() * 1.5
+      : scenario === 'cooling-failure'
+        ? target.max_temp + 7.5 + Math.random() * 2
+        : target.max_temp + 1.5 + Math.random() * 1.5;
     await processTemperaturePing(target, Math.round(breachTemp * 10) / 10);
   }, [sensors, processTemperaturePing]);
 
@@ -467,8 +474,10 @@ export function useColdChain() {
     scannedAt: string;
   } | null>(null);
 
-  const simulateQRScan = useCallback(async () => {
-    const target = sensors[Math.floor(Math.random() * sensors.length)];
+  const simulateQRScan = useCallback(async (sensorId?: string) => {
+    const target = sensorId
+      ? sensors.find((sensor) => sensor.id === sensorId)
+      : sensors[0];
     if (!target) return;
 
     setQrScanResult({
