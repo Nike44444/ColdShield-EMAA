@@ -25,6 +25,7 @@ import { SimulationControls } from '@/components/SimulationControls';
 import { QRScanModal } from '@/components/QRScanModal';
 import { BLELoggerPanel } from '@/components/BLELoggerPanel';
 import { ChainOfCustodyPanel } from '@/components/ChainOfCustodyPanel';
+import { CriticalAlertModal } from '@/components/CriticalAlertModal';
 import { formatShortHash, useBLELogger } from '@/hooks/useBLELogger';
 
 function App() {
@@ -97,15 +98,15 @@ function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                Cold Chain Monitoring
+                EMAA
               </h1>
               <p className="text-xs text-slate-400">
-                Real-time temperature surveillance & breach escalation
+                Vaccine chain-of-custody & excursion safety
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               className={`inline-flex max-w-[13rem] items-center gap-1.5 rounded-xl border px-3 py-2 font-mono text-[11px] ${
                 bleLogger.state.sealed
@@ -312,6 +313,11 @@ function App() {
         onClose={clearQRScanResult}
         onSelectSensor={(id) => setSelectedSensorId(id)}
         onSeal={(signature) => bleLogger.sealLog(signature)}
+      />
+      <CriticalAlertModal
+        alerts={alertLogs}
+        sensors={sensors}
+        onAcknowledge={acknowledgeAlert}
       />
     </div>
   );

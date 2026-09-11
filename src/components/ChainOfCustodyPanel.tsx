@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, ClipboardCheck, PackageOpen, QrCode, Radio, RefreshCw, ShieldAlert, Truck } from 'lucide-react';
+import { Check, ClipboardCheck, PackageOpen, QrCode, RefreshCw, ShieldAlert, Thermometer, Truck, MapPin, Boxes } from 'lucide-react';
 import type { BLELogEntry, BLELoggerState } from '@/hooks/useBLELogger';
 
 type ChainOfCustodyPanelProps = {
@@ -38,19 +38,49 @@ export function ChainOfCustodyPanel({
   ];
 
   return (
-    <section className="rounded-2xl border border-cyan-700/40 bg-slate-900/70 p-4 shadow-lg shadow-cyan-950/10">
-      <div className="mb-4 flex items-start justify-between gap-3">
+    <section className="overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900/80 shadow-xl shadow-slate-950/30">
+      <div className="border-b border-slate-700/50 bg-gradient-to-r from-cyan-950/60 via-slate-900 to-slate-900 p-4">
+        <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-400">EMAA : ColdShield</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-400">EMAA</p>
           <h2 className="mt-1 text-base font-semibold text-white">Last-mile chain of custody</h2>
-          <p className="mt-1 text-xs text-slate-400">Batch EMAA-HEPB-2409 • 120 vials • 2–8°C</p>
+          <p className="mt-1 text-xs text-slate-400">Live batch safety decision for destination use</p>
         </div>
         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${unsafe ? 'bg-red-500/20 text-red-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
           {unsafe ? 'HOLD / REVIEW' : 'INTEGRITY OK'}
         </span>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-xl border border-cyan-800/40 bg-slate-950/35 p-2.5">
+            <p className="text-slate-500">Vaccine / batch</p>
+            <p className="mt-1 font-semibold text-slate-100">Engerix-B</p>
+            <p className="font-mono text-[10px] text-cyan-300">EMAA-HEPB-2409</p>
+          </div>
+          <div className="rounded-xl border border-cyan-800/40 bg-slate-950/35 p-2.5">
+            <p className="text-slate-500">Vial inventory</p>
+            <p className="mt-1 flex items-center gap-1 font-semibold text-slate-100"><Boxes className="h-3.5 w-3.5 text-cyan-400" /> 120 vials</p>
+            <p className="text-[10px] text-slate-400">Freeze-sensitive</p>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="p-4">
+      <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-slate-950/50 p-2.5">
+          <p className="flex items-center gap-1 text-slate-500"><Thermometer className="h-3 w-3" /> Storage band</p>
+          <p className="mt-1 font-semibold text-cyan-300">2°C — 8°C</p>
+        </div>
+        <div className="rounded-xl bg-slate-950/50 p-2.5">
+          <p className="text-slate-500">Thermal budget</p>
+          <p className={`mt-1 font-semibold ${unsafe ? 'text-red-300' : 'text-emerald-300'}`}>{Math.max(0, 5 - cumulativeExposure)} min remaining</p>
+        </div>
+        <div className="col-span-2 rounded-xl bg-slate-950/50 p-2.5 text-slate-400">
+          <p className="flex items-center gap-1 text-slate-500"><MapPin className="h-3 w-3" /> Route</p>
+          <p className="mt-1 truncate text-xs text-slate-300">Central Cold Room → Primary Health Centre Receiving Bay</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
         {steps.map((item, index) => {
           const Icon = item.icon;
           const active = index + 1 === stage && !item.done;
@@ -88,6 +118,7 @@ export function ChainOfCustodyPanel({
           Replacement request RPL-2409 created. Source cold room must dispatch a new verified batch.
         </p>
       )}
+      </div>
     </section>
   );
 }
