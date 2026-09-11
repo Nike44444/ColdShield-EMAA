@@ -26,6 +26,7 @@ import { QRScanModal } from '@/components/QRScanModal';
 import { BLELoggerPanel } from '@/components/BLELoggerPanel';
 import { ChainOfCustodyPanel } from '@/components/ChainOfCustodyPanel';
 import { CriticalAlertModal } from '@/components/CriticalAlertModal';
+import { LastMileTracker } from '@/components/LastMileTracker';
 import { formatShortHash, useBLELogger } from '@/hooks/useBLELogger';
 
 function App() {
@@ -260,6 +261,7 @@ function App() {
               onStartLogger={bleLogger.start}
               onScanAtDestination={simulateQRScan}
             />
+            <LastMileTracker />
             <BLELoggerPanel
               state={bleLogger.state}
               log={bleLogger.log}
