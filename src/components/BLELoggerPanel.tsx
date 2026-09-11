@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Radio,
   Play,
@@ -12,8 +13,11 @@ import {
   Clock,
   Database,
   Activity,
+  Hash,
+  Lock,
 } from 'lucide-react';
 import type { BLELogEntry, BLELoggerState, BLEMode } from '@/hooks/useBLELogger';
+import { formatShortHash } from '@/hooks/useBLELogger';
 
 type BLELoggerPanelProps = {
   state: BLELoggerState;
@@ -38,10 +42,26 @@ export function BLELoggerPanel({
   onManualSync,
   onClearLog,
 }: BLELoggerPanelProps) {
-  const { isRunning, mode, bufferedCount, totalPings, syncedPings, lastTemperature, lastPingAt } =
-    state;
+  const {
+    isRunning,
+    mode,
+    bufferedCount,
+    totalPings,
+    syncedPings,
+    lastTemperature,
+    chainHash,
+    sealed,
+  } = state;
 
   const isOffline = mode === 'offline';
+  const [hashPulse, setHashPulse] = useState(false);
+
+  useEffect(() => {
+    if (!chainHash) return;
+    setHashPulse(true);
+    const timer = window.setTimeout(() => setHashPulse(false), 450);
+    return () => window.clearTimeout(timer);
+  }, [chainHash, totalPings]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-900/60">
@@ -64,22 +84,62 @@ export function BLELoggerPanel({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-end gap-1.5">
           <span
             className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-              isRunning
-                ? 'bg-emerald-500/20 text-emerald-400'
-                : 'bg-slate-700/40 text-slate-400'
+              sealed
+                ? 'bg-cyan-500/20 text-cyan-300'
+                : isRunning
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-slate-700/40 text-slate-400'
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                isRunning ? 'animate-pulse bg-emerald-400' : 'bg-slate-500'
+                sealed
+                  ? 'bg-cyan-400'
+                  : isRunning
+                    ? 'animate-pulse bg-emerald-400'
+                    : 'bg-slate-500'
               }`}
             />
-            {isRunning ? 'Streaming' : 'Idle'}
+            {sealed ? 'Sealed' : isRunning ? 'Streaming' : 'Idle'}
+          </span>
+          <span
+            className={`inline-flex max-w-[11.5rem] items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[10px] tracking-tight transition-all ${
+              hashPulse ? 'border-cyan-400 bg-cyan-500/20 text-cyan-200' : ''
+            } ${
+              sealed
+                ? 'border-cyan-600/50 bg-cyan-950/40 text-cyan-300'
+                : totalPings > 0
+                  ? 'border-slate-600/60 bg-slate-800/80 text-slate-200'
+                  : 'border-slate-700/40 bg-slate-800/40 text-slate-500'
+            }`}
+            title={chainHash}
+          >
+            {sealed ? <Lock className="h-3 w-3 shrink-0" /> : <Hash className="h-3 w-3 shrink-0" />}
+            SHA-256: {formatShortHash(chainHash)}
           </span>
         </div>
+      </div>
+
+      <div
+        className={`flex items-center justify-between gap-2 border-b border-slate-700/50 px-4 py-2.5 transition-colors ${
+          hashPulse ? 'bg-cyan-950/40' : 'bg-slate-950/40'
+        }`}
+      >
+        <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          {sealed ? <Lock className="h-3 w-3 text-cyan-400" /> : <Hash className="h-3 w-3 text-cyan-500" />}
+          Tamper-evident chain
+        </span>
+        <span
+          className={`font-mono text-xs tracking-tight ${
+            sealed ? 'text-cyan-300' : hashPulse ? 'text-cyan-200' : 'text-slate-200'
+          }`}
+          title={chainHash}
+        >
+          SHA-256: {formatShortHash(chainHash)}
+        </span>
       </div>
 
       {/* Stats Row */}
@@ -111,14 +171,15 @@ export function BLELoggerPanel({
         {/* Start/Stop */}
         <button
           onClick={isRunning ? onStop : onStart}
-          className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all ${
+          disabled={sealed && !isRunning}
+          className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
             isRunning
               ? 'bg-amber-600 text-white hover:bg-amber-500'
               : 'bg-cyan-600 text-white hover:bg-cyan-500'
           }`}
         >
           {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          {isRunning ? 'Stop BLE Stream' : 'Start BLE Stream'}
+          {sealed ? 'Log Sealed' : isRunning ? 'Stop BLE Stream' : 'Start BLE Stream'}
         </button>
 
         {/* Mode Buttons */}
@@ -212,7 +273,7 @@ export function BLELoggerPanel({
               <Activity className="h-3.5 w-3.5" />
               Ping Log
             </h3>
-            {log.length > 0 && (
+            {log.length > 0 && !sealed && (
               <button
                 onClick={onClearLog}
                 className="flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-slate-300"
@@ -288,9 +349,16 @@ export function BLELoggerPanel({
                             : 'NORMAL'}
                       </span>
 
-                      {/* Timestamp */}
-                      <span className="ml-auto shrink-0 text-slate-500">
-                        {new Date(entry.timestamp).toLocaleTimeString()}
+                      {/* Timestamp + hash */}
+                      <span className="ml-auto flex shrink-0 flex-col items-end">
+                        <span className="text-slate-500">
+                          {new Date(entry.timestamp).toLocaleTimeString()}
+                        </span>
+                        {entry.hash && (
+                          <span className="font-mono text-[9px] text-slate-600">
+                            {formatShortHash(entry.hash)}
+                          </span>
+                        )}
                       </span>
                     </div>
                   );

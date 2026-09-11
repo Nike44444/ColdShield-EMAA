@@ -8,6 +8,9 @@ const MAX_LOG_ENTRIES = 100;
 
 export type BLEMode = 'normal' | 'breach' | 'offline';
 
+const GENESIS_HASH =
+  '0000000000000000000000000000000000000000000000000000000000000000';
+
 export type BLELogEntry = {
   id: string;
   timestamp: string;
@@ -17,6 +20,7 @@ export type BLELogEntry = {
   mode: BLEMode;
   synced: boolean;
   buffered: boolean;
+  hash: string;
 };
 
 export type BLELoggerState = {
@@ -27,7 +31,23 @@ export type BLELoggerState = {
   syncedPings: number;
   lastTemperature: number | null;
   lastPingAt: string | null;
+  chainHash: string;
+  sealed: boolean;
+  sealedAt: string | null;
 };
+
+export function formatShortHash(hash: string): string {
+  if (!hash || hash.length < 8) return '----...----';
+  return `${hash.slice(0, 4)}...${hash.slice(-4)}`;
+}
+
+async function sha256Hex(message: string): Promise<string> {
+  const data = new TextEncoder().encode(message);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
 
 function loadBuffer(): BLELogEntry[] {
   try {
@@ -69,12 +89,17 @@ export function useBLELogger(sensors: Sensor[]) {
   const [lastTemperature, setLastTemperature] = useState<number | null>(null);
   const [lastPingAt, setLastPingAt] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [chainHash, setChainHash] = useState(GENESIS_HASH);
+  const [sealed, setSealed] = useState(false);
+  const [sealedAt, setSealedAt] = useState<string | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const modeRef = useRef<BLEMode>('normal');
   const sensorsRef = useRef<Sensor[]>([]);
   const isRunningRef = useRef(false);
   const pingCounterRef = useRef(0);
+  const chainHashRef = useRef(GENESIS_HASH);
+  const sealedRef = useRef(false);
 
   // Keep refs in sync
   useEffect(() => {
@@ -89,6 +114,10 @@ export function useBLELogger(sensors: Sensor[]) {
     isRunningRef.current = isRunning;
   }, [isRunning]);
 
+  useEffect(() => {
+    sealedRef.current = sealed;
+  }, [sealed]);
+
   // Load buffered count on mount
   useEffect(() => {
     const buffer = loadBuffer();
@@ -97,6 +126,8 @@ export function useBLELogger(sensors: Sensor[]) {
 
   // Generate a single ping
   const emitPing = useCallback(async () => {
+    if (sealedRef.current) return;
+
     const availableSensors = sensorsRef.current.filter((s) => s.is_active);
     if (availableSensors.length === 0) return;
 
@@ -116,6 +147,19 @@ export function useBLELogger(sensors: Sensor[]) {
     const now = new Date().toISOString();
     const pingId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+    const nextHash = await sha256Hex(
+      JSON.stringify({
+        prev: chainHashRef.current,
+        id: pingId,
+        timestamp: now,
+        sensorId: sensor.id,
+        temperature,
+        mode: currentMode,
+      })
+    );
+    chainHashRef.current = nextHash;
+    setChainHash(nextHash);
+
     const entry: BLELogEntry = {
       id: pingId,
       timestamp: now,
@@ -125,6 +169,7 @@ export function useBLELogger(sensors: Sensor[]) {
       mode: currentMode,
       synced: false,
       buffered: currentMode === 'offline',
+      hash: nextHash,
     };
 
     setTotalPings((prev) => prev + 1);
@@ -244,6 +289,7 @@ export function useBLELogger(sensors: Sensor[]) {
 
   // Start/stop the BLE stream
   const start = useCallback(() => {
+    if (sealedRef.current) return;
     setIsRunning(true);
   }, []);
 
@@ -276,7 +322,7 @@ export function useBLELogger(sensors: Sensor[]) {
 
   // Simulation interval
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning || sealed) return;
 
     intervalRef.current = setInterval(() => {
       emitPing();
@@ -296,7 +342,29 @@ export function useBLELogger(sensors: Sensor[]) {
 
   // Clear log
   const clearLog = useCallback(() => {
+    if (sealedRef.current) return;
     setLog([]);
+    chainHashRef.current = GENESIS_HASH;
+    setChainHash(GENESIS_HASH);
+  }, []);
+
+  const sealLog = useCallback(async (signatureDataUrl?: string) => {
+    const sealedAtIso = new Date().toISOString();
+    const sealedHash = await sha256Hex(
+      JSON.stringify({
+        prev: chainHashRef.current,
+        signature: signatureDataUrl ?? '',
+        sealedAt: sealedAtIso,
+        totalPings: pingCounterRef.current,
+        action: 'HANDOVER_SEAL',
+      })
+    );
+    chainHashRef.current = sealedHash;
+    setChainHash(sealedHash);
+    setSealed(true);
+    setSealedAt(sealedAtIso);
+    setIsRunning(false);
+    return sealedHash;
   }, []);
 
   const state: BLELoggerState = {
@@ -307,6 +375,9 @@ export function useBLELogger(sensors: Sensor[]) {
     syncedPings,
     lastTemperature,
     lastPingAt,
+    chainHash,
+    sealed,
+    sealedAt,
   };
 
   return {
@@ -319,5 +390,6 @@ export function useBLELogger(sensors: Sensor[]) {
     toggleOffline,
     manualSync,
     clearLog,
+    sealLog,
   };
 }

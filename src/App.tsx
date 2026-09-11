@@ -11,6 +11,8 @@ import {
   Snowflake,
   Gauge,
   TrendingUp,
+  Hash,
+  Lock,
 } from 'lucide-react';
 import { useColdChain } from '@/hooks/useColdChain';
 import { StatCard } from '@/components/StatCard';
@@ -22,7 +24,7 @@ import { EscalationLegend } from '@/components/EscalationLegend';
 import { SimulationControls } from '@/components/SimulationControls';
 import { QRScanModal } from '@/components/QRScanModal';
 import { BLELoggerPanel } from '@/components/BLELoggerPanel';
-import { useBLELogger } from '@/hooks/useBLELogger';
+import { formatShortHash, useBLELogger } from '@/hooks/useBLELogger';
 
 function App() {
   const {
@@ -103,6 +105,21 @@ function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex max-w-[13rem] items-center gap-1.5 rounded-xl border px-3 py-2 font-mono text-[11px] ${
+                bleLogger.state.sealed
+                  ? 'border-cyan-600/50 bg-cyan-950/40 text-cyan-300'
+                  : 'border-slate-700/50 bg-slate-900/60 text-slate-200'
+              }`}
+              title={bleLogger.state.chainHash}
+            >
+              {bleLogger.state.sealed ? (
+                <Lock className="h-3.5 w-3.5 shrink-0" />
+              ) : (
+                <Hash className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+              )}
+              SHA-256: {formatShortHash(bleLogger.state.chainHash)}
+            </span>
             <div
               className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
                 simulating
@@ -274,11 +291,19 @@ function App() {
         </footer>
       </div>
 
-      {/* QR Scan Modal */}
+      {/* Digital Handover Modal (QR scan) */}
       <QRScanModal
         result={qrScanResult}
+        sensor={
+          qrScanResult
+            ? sensors.find((s) => s.id === qrScanResult.sensor.id) ?? null
+            : null
+        }
+        chainHash={bleLogger.state.chainHash}
+        sealed={bleLogger.state.sealed}
         onClose={clearQRScanResult}
         onSelectSensor={(id) => setSelectedSensorId(id)}
+        onSeal={(signature) => bleLogger.sealLog(signature)}
       />
     </div>
   );

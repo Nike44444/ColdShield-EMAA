@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type {
   Sensor,
   TemperatureReading,
@@ -24,6 +24,42 @@ type BreachState = {
 };
 
 type SensorState = Record<string, BreachState>;
+
+const DEMO_SENSORS: Sensor[] = [
+  {
+    id: 'demo-clinic-a',
+    name: 'Vaccine Carrier A',
+    location: 'Primary Health Centre — Receiving Bay',
+    min_temp: 2,
+    max_temp: 8,
+    status: 'normal',
+    current_temp: 4.6,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'demo-clinic-b',
+    name: 'Vaccine Carrier B',
+    location: 'District Vaccine Store — Cold Room',
+    min_temp: 2,
+    max_temp: 8,
+    status: 'normal',
+    current_temp: 5.1,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'demo-clinic-c',
+    name: 'Outreach Cold Box',
+    location: 'Field Immunization Site — Checkpoint',
+    min_temp: 2,
+    max_temp: 8,
+    status: 'normal',
+    current_temp: 3.8,
+    is_active: true,
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+];
 
 function generateTemperature(sensor: Sensor): number {
   const baseTemp = sensor.current_temp ?? (sensor.min_temp + sensor.max_temp) / 2;
@@ -72,6 +108,32 @@ export function useColdChain() {
   // Load initial data
   const loadData = useCallback(async () => {
     setLoading(true);
+    if (!isSupabaseConfigured) {
+      const states = Object.fromEntries(
+        DEMO_SENSORS.map((sensor) => [sensor.id, {
+          breachMinutes: 0,
+          alertLevel: 0,
+          activeBreachId: null,
+          breachType: null,
+          maxTemp: 0,
+          minTemp: 0,
+        }])
+      ) as SensorState;
+      setSensors(DEMO_SENSORS);
+      setSensorStates(states);
+      sensorStatesRef.current = states;
+      setBreachEvents([]);
+      setAlertLogs([]);
+      setStats({
+        totalSensors: DEMO_SENSORS.length,
+        activeBreaches: 0,
+        totalBreaches: 0,
+        acknowledgedAlerts: 0,
+        unacknowledgedAlerts: 0,
+      });
+      setLoading(false);
+      return;
+    }
     const [
       { data: sensorData },
       { data: breachData },
@@ -413,9 +475,6 @@ export function useColdChain() {
       sensor: target,
       scannedAt: new Date().toISOString(),
     });
-
-    // Auto-clear after 5 seconds
-    setTimeout(() => setQrScanResult(null), 5000);
   }, [sensors]);
 
   const clearQRScanResult = useCallback(() => {
