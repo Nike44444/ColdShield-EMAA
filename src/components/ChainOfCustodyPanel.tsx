@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Check, ClipboardCheck, PackageOpen, QrCode, RefreshCw, ShieldAlert, Thermometer, Truck, MapPin, Boxes } from 'lucide-react';
 import type { BLELogEntry, BLELoggerState } from '@/hooks/useBLELogger';
+import type { VaccineProfile } from '@/components/VaccineProfiles';
 
 type ChainOfCustodyPanelProps = {
   logger: BLELoggerState;
   log: BLELogEntry[];
   dispatchPayload: string | null;
+  vaccine: VaccineProfile;
   onRequestDispatchScan: () => void;
   onRequestDestinationScan: () => void;
 };
@@ -14,6 +16,7 @@ export function ChainOfCustodyPanel({
   logger,
   log,
   dispatchPayload,
+  vaccine,
   onRequestDispatchScan,
   onRequestDestinationScan,
 }: ChainOfCustodyPanelProps) {
@@ -49,13 +52,13 @@ export function ChainOfCustodyPanel({
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-xl border border-cyan-800/40 bg-slate-950/35 p-2.5">
             <p className="text-slate-500">Vaccine / batch</p>
-            <p className="mt-1 font-semibold text-slate-100">Engerix-B</p>
-            <p className="font-mono text-[10px] text-cyan-300">EMAA-HEPB-2409</p>
+            <p className="mt-1 font-semibold text-slate-100">{vaccine.vaccine}</p>
+            <p className="font-mono text-[10px] text-cyan-300">{vaccine.batch}</p>
           </div>
           <div className="rounded-xl border border-cyan-800/40 bg-slate-950/35 p-2.5">
             <p className="text-slate-500">Vial inventory</p>
-            <p className="mt-1 flex items-center gap-1 font-semibold text-slate-100"><Boxes className="h-3.5 w-3.5 text-cyan-400" /> 120 vials</p>
-            <p className="text-[10px] text-slate-400">Freeze-sensitive</p>
+            <p className="mt-1 flex items-center gap-1 font-semibold text-slate-100"><Boxes className="h-3.5 w-3.5 text-cyan-400" /> {vaccine.inventory} vials</p>
+            <p className="text-[10px] text-slate-400">{vaccine.warning}</p>
           </div>
         </div>
       </div>
@@ -64,7 +67,7 @@ export function ChainOfCustodyPanel({
       <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-xl bg-slate-950/50 p-2.5">
           <p className="flex items-center gap-1 text-slate-500"><Thermometer className="h-3 w-3" /> Storage band</p>
-          <p className="mt-1 font-semibold text-cyan-300">2°C — 8°C</p>
+          <p className="mt-1 font-semibold text-cyan-300">{vaccine.band}</p>
         </div>
         <div className="rounded-xl bg-slate-950/50 p-2.5">
           <p className="text-slate-500">Thermal budget</p>

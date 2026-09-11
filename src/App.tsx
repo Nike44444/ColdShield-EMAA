@@ -11,7 +11,7 @@ import { BLELoggerPanel } from '@/components/BLELoggerPanel';
 import { ChainOfCustodyPanel } from '@/components/ChainOfCustodyPanel';
 import { CriticalAlertModal } from '@/components/CriticalAlertModal';
 import { LastMileTracker } from '@/components/LastMileTracker';
-import { VaccineProfiles } from '@/components/VaccineProfiles';
+import { profiles, VaccineProfiles, type VaccineProfile } from '@/components/VaccineProfiles';
 import { formatShortHash, useBLELogger } from '@/hooks/useBLELogger';
 
 function App() {
@@ -21,6 +21,7 @@ function App() {
   const [incident, setIncident] = useState<string | null>(null);
   const [scannerMode, setScannerMode] = useState<'dispatch' | 'destination' | null>(null);
   const [dispatchPayload, setDispatchPayload] = useState<string | null>(null);
+  const [activeVaccine, setActiveVaccine] = useState<VaccineProfile>(profiles[0]);
 
   useEffect(() => {
     if (sensors.length > 0 && !selectedSensorId) setSelectedSensorId(sensors[0].id);
@@ -62,13 +63,13 @@ function App() {
         {incident && <div className="mb-6 rounded-xl border border-cyan-700/40 bg-cyan-950/25 px-4 py-3 text-sm text-cyan-100">{incident}</div>}
         <main className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="space-y-6 xl:col-span-2">
-            <ChainOfCustodyPanel logger={bleLogger.state} log={bleLogger.log} dispatchPayload={dispatchPayload} onRequestDispatchScan={() => setScannerMode('dispatch')} onRequestDestinationScan={requestDestinationScan} />
+            <ChainOfCustodyPanel logger={bleLogger.state} log={bleLogger.log} dispatchPayload={dispatchPayload} vaccine={activeVaccine} onRequestDispatchScan={() => setScannerMode('dispatch')} onRequestDestinationScan={requestDestinationScan} />
             <section className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-4">
               <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300">Temperature checks</h2><p className="mt-1 text-xs text-slate-500">Select a refrigerator to inspect its timestamped graph and current condition.</p></div><span className="shrink-0 text-xs text-slate-500">{sensors.filter((sensor) => sensor.alertLevel === 0).length}/{sensors.length} in range</span></div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{sensors.map((sensor) => <SensorCard key={sensor.id} sensor={sensor} onClick={() => setSelectedSensorId(sensor.id)} isSelected={selectedSensorId === sensor.id} />)}</div>
               {selectedSensor && <div className="mt-4"><TemperatureChart readings={selectedSensor.recentReadings} sensor={selectedSensor} /></div>}
             </section>
-            <VaccineProfiles />
+            <VaccineProfiles selectedId={activeVaccine.id} onSelect={setActiveVaccine} />
             <LastMileTracker />
           </div>
           <aside className="space-y-6 xl:col-span-1">
