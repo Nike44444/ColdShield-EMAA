@@ -6,6 +6,7 @@ import { TemperatureChart } from '@/components/TemperatureChart';
 import { AlertPanel } from '@/components/AlertPanel';
 import { SimulationControls, type IncidentScenario } from '@/components/SimulationControls';
 import { QRScanModal } from '@/components/QRScanModal';
+import { QRScannerModal } from '@/components/QRScannerModal';
 import { BLELoggerPanel } from '@/components/BLELoggerPanel';
 import { ChainOfCustodyPanel } from '@/components/ChainOfCustodyPanel';
 import { CriticalAlertModal } from '@/components/CriticalAlertModal';
@@ -18,6 +19,8 @@ function App() {
   const bleLogger = useBLELogger(sensors);
   const [selectedSensorId, setSelectedSensorId] = useState<string | null>(null);
   const [incident, setIncident] = useState<string | null>(null);
+  const [scannerMode, setScannerMode] = useState<'dispatch' | 'destination' | null>(null);
+  const [dispatchPayload, setDispatchPayload] = useState<string | null>(null);
 
   useEffect(() => {
     if (sensors.length > 0 && !selectedSensorId) setSelectedSensorId(sensors[0].id);
@@ -30,6 +33,15 @@ function App() {
     const label = scenario === 'door-open' ? 'Door left open' : scenario === 'cooling-failure' ? 'Cooling failure' : 'Freeze exposure';
     setIncident(`${label} recorded for ${selectedSensor?.name ?? 'the selected unit'}. The graph and alert workflow now reflect this event.`);
     triggerHeatBreach(selectedSensorId ?? undefined, scenario);
+  };
+  const completeScan = (payload: string) => {
+    if (scannerMode === 'dispatch') { setDispatchPayload(payload); bleLogger.start(); }
+    else if (scannerMode === 'destination') simulateQRScan(selectedSensorId ?? undefined);
+    setScannerMode(null);
+  };
+  const requestDestinationScan = () => {
+    if (!dispatchPayload) { setIncident('Dispatch QR verification is required before the destination handover scan.'); return; }
+    setScannerMode('destination');
   };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-slate-950"><div className="flex flex-col items-center gap-3"><div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-cyan-400" /><p className="text-sm text-slate-400">Loading cold chain monitoring system...</p></div></div>;
@@ -46,11 +58,11 @@ function App() {
             <button onClick={simulating ? stopSimulation : startSimulation} className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all ${simulating ? 'bg-amber-600 text-white hover:bg-amber-500' : 'bg-cyan-600 text-white hover:bg-cyan-500'}`}>{simulating ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}{simulating ? 'Pause' : 'Start'} Monitoring</button>
           </div>
         </header>
-        <div className="mb-6"><SimulationControls onScenario={runScenario} onToggleLoggerOffline={bleLogger.toggleOffline} onSimulateQRScan={() => simulateQRScan(selectedSensorId ?? undefined)} /></div>
+        <div className="mb-6"><SimulationControls onScenario={runScenario} onToggleLoggerOffline={bleLogger.toggleOffline} onSimulateQRScan={requestDestinationScan} /></div>
         {incident && <div className="mb-6 rounded-xl border border-cyan-700/40 bg-cyan-950/25 px-4 py-3 text-sm text-cyan-100">{incident}</div>}
         <main className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="space-y-6 xl:col-span-2">
-            <ChainOfCustodyPanel logger={bleLogger.state} log={bleLogger.log} onStartLogger={bleLogger.start} onScanAtDestination={() => simulateQRScan(selectedSensorId ?? undefined)} />
+            <ChainOfCustodyPanel logger={bleLogger.state} log={bleLogger.log} dispatchPayload={dispatchPayload} onRequestDispatchScan={() => setScannerMode('dispatch')} onRequestDestinationScan={requestDestinationScan} />
             <section className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-4">
               <div className="mb-3 flex items-center justify-between gap-3"><div><h2 className="text-sm font-semibold uppercase tracking-wider text-slate-300">Temperature checks</h2><p className="mt-1 text-xs text-slate-500">Select a refrigerator to inspect its timestamped graph and current condition.</p></div><span className="shrink-0 text-xs text-slate-500">{sensors.filter((sensor) => sensor.alertLevel === 0).length}/{sensors.length} in range</span></div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{sensors.map((sensor) => <SensorCard key={sensor.id} sensor={sensor} onClick={() => setSelectedSensorId(sensor.id)} isSelected={selectedSensorId === sensor.id} />)}</div>
@@ -67,6 +79,7 @@ function App() {
         <footer className="mt-8 border-t border-slate-800 pt-4"><div className="flex flex-col items-center justify-between gap-2 text-xs text-slate-500 sm:flex-row"><div className="flex items-center gap-2"><TrendingUp className="h-3.5 w-3.5" /><span>Simulating BLE sensor pings every 2 seconds</span></div><div className="flex items-center gap-4"><span>Safe range: 2–8°C</span><span>•</span><span>Supervisor escalation: 5 min</span><span>•</span><span>Pharmacist escalation: 15 min</span></div></div></footer>
       </div>
       <QRScanModal result={qrScanResult} sensor={qrScanResult ? sensors.find((sensor) => sensor.id === qrScanResult.sensor.id) ?? null : null} chainHash={bleLogger.state.chainHash} log={bleLogger.log} sealed={bleLogger.state.sealed} onClose={clearQRScanResult} onSelectSensor={setSelectedSensorId} onSeal={(signature) => bleLogger.sealLog(signature)} />
+      {scannerMode && <QRScannerModal title={scannerMode === 'dispatch' ? 'Dispatch QR verification' : 'Destination QR verification'} expectedPrefix="EMAA-" onClose={() => setScannerMode(null)} onVerified={completeScan} />}
       <CriticalAlertModal alerts={alertLogs} sensors={sensors} onAcknowledge={acknowledgeAlert} />
     </div>
   );

@@ -5,17 +5,18 @@ import type { BLELogEntry, BLELoggerState } from '@/hooks/useBLELogger';
 type ChainOfCustodyPanelProps = {
   logger: BLELoggerState;
   log: BLELogEntry[];
-  onStartLogger: () => void;
-  onScanAtDestination: () => void;
+  dispatchPayload: string | null;
+  onRequestDispatchScan: () => void;
+  onRequestDestinationScan: () => void;
 };
 
 export function ChainOfCustodyPanel({
   logger,
   log,
-  onStartLogger,
-  onScanAtDestination,
+  dispatchPayload,
+  onRequestDispatchScan,
+  onRequestDestinationScan,
 }: ChainOfCustodyPanelProps) {
-  const [dispatchedAt, setDispatchedAt] = useState<string | null>(null);
   const [replacementRequested, setReplacementRequested] = useState(false);
 
   const cumulativeExposure = useMemo(
@@ -23,15 +24,10 @@ export function ChainOfCustodyPanel({
     [log]
   );
   const unsafe = cumulativeExposure > 5;
-  const stage = logger.sealed ? 4 : dispatchedAt ? 2 : 1;
-
-  const dispatch = () => {
-    setDispatchedAt(new Date().toISOString());
-    onStartLogger();
-  };
+  const stage = logger.sealed ? 4 : dispatchPayload ? 2 : 1;
 
   const steps = [
-    { icon: QrCode, title: 'Dispatch', detail: dispatchedAt ? 'QR verified • Logger paired' : 'Scan batch & capture start condition', done: Boolean(dispatchedAt) },
+    { icon: QrCode, title: 'Dispatch', detail: dispatchPayload ? `QR verified • ${dispatchPayload}` : 'Scan batch QR & pair logger', done: Boolean(dispatchPayload) },
     { icon: Truck, title: 'Transit', detail: logger.isRunning ? `${logger.totalPings} immutable readings` : 'Logger stream waiting', done: stage > 1 },
     { icon: ShieldAlert, title: 'Escalation', detail: `${cumulativeExposure} simulated min above 8°C`, done: unsafe },
     { icon: ClipboardCheck, title: 'Handover', detail: logger.sealed ? 'Signed and hash sealed' : 'Destination pharmacist verification', done: logger.sealed },
@@ -98,12 +94,12 @@ export function ChainOfCustodyPanel({
         })}
       </div>
 
-      {!dispatchedAt ? (
-        <button onClick={dispatch} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500">
-          <PackageOpen className="h-4 w-4" /> Scan & dispatch batch
+      {!dispatchPayload ? (
+        <button onClick={onRequestDispatchScan} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500">
+          <PackageOpen className="h-4 w-4" /> Scan QR & dispatch batch
         </button>
       ) : !logger.sealed && (
-        <button onClick={onScanAtDestination} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500">
+        <button onClick={onRequestDestinationScan} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-semibold text-white transition hover:bg-cyan-500">
           <QrCode className="h-4 w-4" /> Destination QR handover
         </button>
       )}
