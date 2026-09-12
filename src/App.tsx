@@ -61,6 +61,7 @@ function App() {
           </div>
         </header>
         <div className="mb-6"><SimulationControls onScenario={runScenario} onToggleLoggerOffline={bleLogger.toggleOffline} onSimulateQRScan={requestDestinationScan} /></div>
+        <a href="https://cold-chain-shield.preview.emergentagent.com/" target="_blank" rel="noreferrer" className="mb-6 flex items-center justify-between rounded-2xl border border-violet-600/50 bg-violet-950/30 p-4 text-violet-100 transition-colors hover:bg-violet-900/35"><span><span className="block text-sm font-semibold">Further vaccine details</span><span className="mt-1 block text-xs text-violet-200/70">Open the ColdShield vaccine reference guide</span></span><span className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white">Open guide ↗</span></a>
         {incident && <div className="mb-6 rounded-xl border border-cyan-700/40 bg-cyan-950/25 px-4 py-3 text-sm text-cyan-100">{incident}</div>}
         <main className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="space-y-6 xl:col-span-2">
