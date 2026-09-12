@@ -26,6 +26,7 @@ type QRScanModalProps = {
   onClose: () => void;
   onSelectSensor: (sensorId: string) => void;
   onSeal: (signatureDataUrl: string) => Promise<string | void>;
+  onReplaceBatch: () => void;
 };
 
 type SignaturePadProps = {
@@ -162,6 +163,7 @@ export function QRScanModal({
   onClose,
   onSelectSensor,
   onSeal,
+  onReplaceBatch,
 }: QRScanModalProps) {
   const [visible, setVisible] = useState(false);
   const [pharmacistSigned, setPharmacistSigned] = useState(false);
@@ -169,7 +171,6 @@ export function QRScanModal({
   const [sealing, setSealing] = useState(false);
   const [finalized, setFinalized] = useState(false);
   const [sealedHash, setSealedHash] = useState<string | null>(null);
-  const [replacementRequested, setReplacementRequested] = useState(false);
 
   const pharmacistCanvasRef = useRef<HTMLCanvasElement>(null);
   const fieldCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -182,7 +183,6 @@ export function QRScanModal({
       setSealing(false);
       setFinalized(false);
       setSealedHash(null);
-      setReplacementRequested(false);
     } else {
       setVisible(false);
     }
@@ -399,7 +399,7 @@ export function QRScanModal({
               {!trajectoryPass && (
                 <div className="mt-4 rounded-xl border border-red-700/50 bg-red-950/25 p-3 text-center text-xs text-red-200">
                   <p className="font-semibold">Handover approval is unavailable while this vaccine fails safety checks.</p>
-                  {!replacementRequested ? <button onClick={() => setReplacementRequested(true)} className="mt-3 rounded-lg bg-red-600 px-3 py-2 font-semibold text-white hover:bg-red-500">Quarantine batch & request replacement</button> : <p className="mt-3 rounded-lg border border-amber-700/40 bg-amber-950/30 p-2 text-amber-200">Replacement request RPL-2409 created. This batch remains blocked.</p>}
+                  <button onClick={() => { onClose(); onReplaceBatch(); }} className="mt-3 rounded-lg bg-red-600 px-3 py-2 font-semibold text-white hover:bg-red-500">Quarantine batch & start replacement</button>
                 </div>
               )}
               <button

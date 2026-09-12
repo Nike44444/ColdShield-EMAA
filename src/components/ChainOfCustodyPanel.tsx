@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Check, ClipboardCheck, PackageOpen, QrCode, RefreshCw, ShieldAlert, Thermometer, Truck, MapPin, Boxes } from 'lucide-react';
+import { useMemo } from 'react';
+import { Check, ClipboardCheck, PackageOpen, QrCode, ShieldAlert, Thermometer, Truck, MapPin, Boxes } from 'lucide-react';
 import type { BLELogEntry, BLELoggerState } from '@/hooks/useBLELogger';
 import type { VaccineProfile } from '@/components/VaccineProfiles';
 
@@ -10,6 +10,7 @@ type ChainOfCustodyPanelProps = {
   vaccine: VaccineProfile;
   onRequestDispatchScan: () => void;
   onRequestDestinationScan: () => void;
+  onReplaceBatch: () => void;
 };
 
 export function ChainOfCustodyPanel({
@@ -19,9 +20,8 @@ export function ChainOfCustodyPanel({
   vaccine,
   onRequestDispatchScan,
   onRequestDestinationScan,
+  onReplaceBatch,
 }: ChainOfCustodyPanelProps) {
-  const [replacementRequested, setReplacementRequested] = useState(false);
-
   const cumulativeExposure = useMemo(
     () => log.filter((ping) => ping.temperature > 8).length * 2,
     [log]
@@ -107,16 +107,7 @@ export function ChainOfCustodyPanel({
         </button>
       )}
 
-      {unsafe && !replacementRequested && (
-        <button onClick={() => setReplacementRequested(true)} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-700/50 bg-red-950/30 py-2.5 text-sm font-medium text-red-200 hover:bg-red-900/40">
-          <RefreshCw className="h-4 w-4" /> Quarantine & request replacement
-        </button>
-      )}
-      {replacementRequested && (
-        <p className="mt-3 rounded-xl border border-amber-700/40 bg-amber-950/30 p-3 text-xs text-amber-200">
-          Replacement request RPL-2409 created. Source cold room must dispatch a new verified batch.
-        </p>
-      )}
+      {unsafe && <button onClick={onReplaceBatch} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-700/50 bg-red-950/30 py-2.5 text-sm font-medium text-red-200 hover:bg-red-900/40">Quarantine this batch & start replacement</button>}
       </div>
     </section>
   );
